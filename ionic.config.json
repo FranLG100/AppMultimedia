@@ -1,0 +1,7 @@
+{
+  "name": "AppMultimedia",
+  "integrations": {
+    "cordova": {}
+  },
+  "type": "angular"
+}
