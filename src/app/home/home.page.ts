@@ -182,16 +182,13 @@ export class HomePage implements OnInit {
  
   openFile(f: FileEntry) {
     if (f.name.indexOf('.mp3') > -1) {
-      // We need to remove file:/// from the path for the audio plugin to work
       //const path =  f.nativeURL.replace(/^file:\/\//, '');
       //const audioFile: MediaObject = this.media.create(path);
       //audioFile.play();
       this.streamingMedia.playAudio(f.nativeURL);
     } else if (f.name.indexOf('.MOV') > -1 || f.name.indexOf('.mp4') > -1) {
-      // E.g: Use the Streaming Media plugin to play a video
       this.streamingMedia.playVideo(f.nativeURL);
     } else if (f.name.indexOf('.jpg') > -1) {
-      // E.g: Use the Photoviewer to present an Image
       this.photoViewer.show(f.nativeURL, f.name);
     }
   }
