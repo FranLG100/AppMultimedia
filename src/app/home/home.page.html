@@ -11,7 +11,7 @@
     <ion-item-sliding *ngFor="let f of files">
       <ion-item (click)="openFile(f)">
         <ion-icon name="image" slot="start" *ngIf="f.name.endsWith('jpg')"></ion-icon>
-        <ion-icon name="videocam" slot="start" *ngIf="f.name.endsWith('MOV') || f.name.endsWith('mp4')"></ion-icon>
+        <ion-icon name="videocam" slot="start" *ngIf="f.name.endsWith('MOV') || f.name.endsWith('mp4') || f.name.endsWith('3gp')"></ion-icon>
         <ion-icon name="mic" slot="start" *ngIf="f.name.endsWith('mp3')"></ion-icon>
  
         <ion-label class="ion-text-wrap">

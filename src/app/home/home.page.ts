@@ -14,6 +14,9 @@ import { AlertController } from '@ionic/angular';
 
 const MEDIA_FOLDER_NAME = 'my_media';
 var mediaName = '';
+var mediaFolder = '';
+var mediaCalidad=0;
+var mediaDuracion=0;
  
 @Component({
   selector: 'app-home',
@@ -75,6 +78,7 @@ export class HomePage implements OnInit {
         {
           text: 'Grabar Vídeo',
           handler: () => {
+            
             this.recordVideo();
           }
         },
@@ -131,21 +135,40 @@ export class HomePage implements OnInit {
     );
   }
  
-  recordVideo() {
-    this.mediaCapture.captureVideo().then(
-      (data: MediaFile[]) => {
-        if (data.length > 0) {
-          this.copyFileToLocalDir(data[0].fullPath);
-        }
-      },
-      (err: CaptureError) => console.error(err)
-    );
+  async recordVideo() {
+    await this.opcionesVideo();
+    console.log("DURACION ESCOGIDA: "+mediaDuracion)
+    console.log("CALIDAD ESCOGIDA: "+mediaCalidad)
+    if(mediaCalidad>1)
+      mediaCalidad=1;
+    if(mediaCalidad<0)
+      mediaCalidad=0
+    if(mediaDuracion!=0){
+      this.mediaCapture.captureVideo({limit:1,quality:mediaCalidad,duration:mediaDuracion}).then(
+        (data: MediaFile[]) => {
+          if (data.length > 0) {
+            this.copyFileToLocalDir(data[0].fullPath);
+          }
+        },
+        (err: CaptureError) => console.error(err)
+      );
+    }else{
+      this.mediaCapture.captureVideo({limit:1,quality:mediaCalidad}).then(
+        (data: MediaFile[]) => {
+          if (data.length > 0) {
+            this.copyFileToLocalDir(data[0].fullPath);
+          }
+        },
+        (err: CaptureError) => console.error(err)
+      );
+    }
   }
 
   async copyFileToLocalDir(fullPath) {
     
     let myPath = fullPath;
     mediaName='';
+    mediaFolder='';
     // Make sure we copy from the right location
     console.log(myPath);
     if (fullPath.indexOf('file://') < 0) {
@@ -165,17 +188,44 @@ export class HomePage implements OnInit {
     console.log(name);
     const copyTo = this.file.dataDirectory + MEDIA_FOLDER_NAME;
     var finalName='';
+    var finalFolder='';
     await this.presentAlertPrompt();
     if(mediaName=='')
       finalName = `${d}.${ext}`;
     else
       finalName=`${mediaName}.${ext}`;
-    this.file.copyFile(copyFrom, newn, 'file:///storage/emulated/0/'+MEDIA_FOLDER_NAME, finalName).then(
+
+    if(mediaFolder=='')
+      finalFolder = MEDIA_FOLDER_NAME;
+    else
+      finalFolder=mediaFolder;
+
+    /*
+    let path = 'file:///storage/emulated/0/';
+    if(!this.file.checkDir(path, finalFolder)){
+      this.file.createDir(path, finalFolder, false);
+    }
+    console.log(path+finalFolder);
+    console.log(finalFolder);*/
+    this.file.copyFile(copyFrom, newn, 'file:///storage/emulated/0/'+finalFolder, finalName).then(
       success => {
         this.loadFiles();
       },
       error => {
-        console.log('error: ', error);
+        console.log('error en el guardado: ', error);
+        console.log('file:///storage/emulated/0/'+finalFolder);
+        /*this.file.createDir(path, finalFolder, false);
+        this.file.copyFile(copyFrom, newn, 'file:///storage/emulated/0/'+finalFolder, finalName);*/
+        let path = 'file:///storage/emulated/0/';
+        this.file.checkDir(path, finalFolder).then(
+          () => {
+            console.log("Si era por la carpeta, ya funciona")
+            this.file.copyFile(copyFrom, newn, 'file:///storage/emulated/0/'+finalFolder, finalName)
+          },
+          err => {
+            console.log("Sigue Fallando");
+          }
+        );
       }
     );
   }
@@ -186,7 +236,7 @@ export class HomePage implements OnInit {
       //const audioFile: MediaObject = this.media.create(path);
       //audioFile.play();
       this.streamingMedia.playAudio(f.nativeURL);
-    } else if (f.name.indexOf('.MOV') > -1 || f.name.indexOf('.mp4') > -1) {
+    } else if (f.name.indexOf('.MOV') > -1 || f.name.indexOf('.mp4') > -1 || f.name.indexOf('.3gp') > -1) {
       this.streamingMedia.playVideo(f.nativeURL);
     } else if (f.name.indexOf('.jpg') > -1) {
       this.photoViewer.show(f.nativeURL, f.name);
@@ -210,11 +260,9 @@ export class HomePage implements OnInit {
           placeholder: 'Nombre'
         },
         {
-          name: 'name2',
+          name: 'Carpeta',
           type: 'text',
-          id: 'name2-id',
-          value: 'hello',
-          placeholder: 'Placeholder 2'
+          placeholder: 'Carpeta'
         }
       ],
       buttons: [
@@ -238,6 +286,59 @@ export class HomePage implements OnInit {
     let result = await alert.onDidDismiss();
     console.log(result.data.values.Nombre);
     mediaName=result.data.values.Nombre;
+    mediaFolder=result.data.values.Carpeta;
+    let path = 'file:///storage/emulated/0/';
+    if(mediaFolder!=''){
+        this.file.checkDir(path, mediaFolder).then(
+          () => {
+            console.log("Ya existe la carpeta")
+          },
+          err => {
+            console.log("Carpeta creada")
+            this.file.createDir(path, mediaFolder, false);
+          }
+        );
+    }
+  }
+
+
+  async opcionesVideo() {
+    const alert = await this.alertController.create({
+      header: 'Nombre',
+      inputs: [
+        {
+          name: 'Calidad',
+          type: 'text',
+          placeholder: 'Calidad (1=alta / 0=baja)'
+        },
+        {
+          name: 'Duracion',
+          type: 'text',
+          placeholder: 'Duracion (sg)'
+        }
+      ],
+      buttons: [
+        /*{
+          text: 'Cancel',
+          role: 'cancel',
+          cssClass: 'secondary',
+          handler: () => {
+            console.log('Confirm Cancel');
+          }
+        },*/ {
+          text: 'Aceptar',
+          handler: () => {
+            console.log('Confirm Ok');
+          }
+        }
+      ]
+    });
+
+    await alert.present();
+    let result = await alert.onDidDismiss();
+    mediaDuracion=result.data.values.Duracion;
+    mediaCalidad=result.data.values.Calidad;
+    console.log('DURACION-> '+mediaDuracion.valueOf());
   }
 }
 
